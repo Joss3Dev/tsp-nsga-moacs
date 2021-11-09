@@ -45,7 +45,6 @@ class Colonia:
         self.actualizar_frente_pareto()
         self.actualizacion_global_feromonas()
 
-
     def encontrar_no_dominados(self, hormigas):
         """Encontrar las hormigas no dominadas en la iteracion actual."""
         pareto_set = []
@@ -100,48 +99,22 @@ class Colonia:
                     j = hormiga.camino[idx]
                     tau[i][j] = tau[j][i] = (1 - rho) * tau[i][j] + rho / (costo1[i][j] * costo2[i][j])
 
-        # DeltaBest = 1 / self.best.path_length
-        # # common update to all edges
-        # for edge in pheromones.keys():
-        #     pheromones[edge] *= (1 - rho)
-        # # update to edges in best path
-        # for i in range(len(self.best.path) - 1):
-        #     if (self.best.path[i], self.best.path[i + 1]) in pheromones.keys():
-        #         pheromones[(self.best.path[i], self.best.path[i + 1])] += rho * DeltaBest
-        #     elif (self.best.path[i + 1], self.best.path[i]) in pheromones.keys():
-        #         pheromones[(self.best.path[i + 1], self.best.path[i])] += rho * DeltaBest
-        #     else:
-        #         raise IndexError('Something went wrong.')
-        # # edges that closes the cycle of the best path
-        # if (self.best.path[0], self.best.path[-1]) in pheromones.keys():
-        #     pheromones[(self.best.path[0], self.best.path[-1])] += rho * DeltaBest
-        # elif (self.best.path[-1], self.best.path[0]) in pheromones.keys():
-        #     pheromones[(self.best.path[-1], self.best.path[0])] += rho * DeltaBest
-        # else:
-        #     raise IndexError('Something went wrong.')
-
 
 class Hormiga:
     def __init__(self, num):
-        """Class that represents an ant that follows a path with a certain length."""
         self.num = num
         self.camino = []
         self.costos_camino = [[], []]
 
     def construir_camino_sin_feromonas(self):
-        """An ant builds a new path according to pseudorandom proportional rule.
-        Pheromone values are updated locally. The total distance of the path is
-        computed."""
         self.camino = []  # erase previous path
         for i in range(len(self.costos_camino)):
             self.costos_camino[i] = 0
 
         lambd = self.num / m
-        self.camino.append(0)  # start from BCN
+        self.camino.append(0)
         for _ in range(1, n):
-            # select possible next stops
             pos_sig = [i for i in range(n)]
-            # delete already visited cities
             for visited in self.camino:
                 pos_sig.remove(visited)
             q = os.urandom(1)[0] / 255
@@ -172,29 +145,15 @@ class Hormiga:
         self.camino.append(0)
 
     def construir_nuevo_camino(self):
-        """An ant builds a new path according to pseudorandom proportional rule.
-        Pheromone values are updated locally. The total distance of the path is
-        computed."""
-        self.camino = []  # erase previous path
+        self.camino = []
         for i in range(len(self.costos_camino)):
             self.costos_camino[i] = 0
-
         lambd = self.num / m
-        self.camino.append(0)  # start from BCN
+        self.camino.append(0)
         for _ in range(1, n):
-            # select possible next stops
             pos_sig = [i for i in range(n)]
-            # delete already visited cities
             for visited in self.camino:
                 pos_sig.remove(visited)
-            # probs = {}
-
-            """ calculo de tau y eta de la hormiga """
-            # Estaticos por paso
-            # promedio_func_1 = promedio_pareto(1)
-            # promedio_func_2 = promedio_pareto(2)
-            # tau_0 = 1 / (promedio_func_1 * promedio_func_2)
-            # lambda = k / m
             q = os.urandom(1)[0] / 255
             i = self.camino[-1]
             if q <= q0:
@@ -213,74 +172,20 @@ class Hormiga:
                     suma_vecinos += t
                 probabilidades = [tau_temporal[camino]/suma_vecinos for camino in tau_temporal]
                 sig_ciudad = np.random.choice(list(tau_temporal.keys()), p=probabilidades)
-
             self.camino.append(sig_ciudad)
             self.costos_camino[0] += costo1[i][j]
             self.costos_camino[1] += costo2[i][j]
-
-            # Se modifica por paso
-            #
-
-
-            # get tau and eta for each next possible option
-            # for opt in pos_sig:
-            #     if (self.camino[-1], opt) in costo1.keys():
-            #         probs.update({opt: pheromones[(self.camino[-1], opt)] ** alpha /
-            #                            europe[(self.camino[-1], opt)] ** beta})
-            #     elif (opt, self.camino[-1]) in europe.keys():
-            #         probs.update({opt: pheromones[(opt, self.camino[-1])] ** alpha /
-            #                            europe[(opt, self.camino[-1])] ** beta})
-            #     else:
-            #         raise IndexError('Something went wrong.')
-            # total = sum(list(probs.values()))
-            # for k in probs:
-            #     probs[k] = probs[k] / total
-            # # select next destination: pseudorandom proportional rule
-            # q = os.urandom(1)[0] / 255.
-            # if q <= q0:
-            #     next_index = np.argmax(list(probs.values()))
-            #     self.camino.append(list(probs.keys())[next_index])
-            # else:
-            #     next_city = np.random.choice(list(probs.keys()),
-            #                                  p=list(probs.values()))
-            #     self.camino.append(next_city)
-
             tau[self.camino[-2]][self.camino[-1]] = tau[self.camino[-1]][self.camino[-2]] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
-
-            # local pheromone update and add edge cost to total distance
-            # if (self.camino[-1], self.camino[-2]) in pheromones.keys():
-            #     pheromones[(self.camino[-1], self.camino[-2])] = (1 - phi) * pheromones[
-            #         (self.camino[-1], self.camino[-2])] + phi * tau0
-            #     self.camino_length += europe[(self.camino[-1], self.camino[-2])]
-            # elif (self.camino[-2], self.camino[-1]) in pheromones.keys():
-            #     pheromones[(self.camino[-2], self.camino[-1])] = (1 - phi) * pheromones[
-            #         (self.camino[-2], self.camino[-1])] + phi * tau0
-            #     self.camino_length += europe[(self.camino[-2], self.camino[-1])]
-            # else:
-            #     raise IndexError('Something went wrong.')
-
 
         tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
         self.camino.append(0)
 
-        # after exit the loop: local pheromone and distance update on edge closing the cycle
-        # if (self.camino[-1], 'Barcelona') in pheromones.keys():
-        #     pheromones[(self.camino[-1], 'Barcelona')] = (1 - phi) * pheromones[
-        #         (self.camino[-1], 'Barcelona')] + phi * tau0
-        #     self.camino_length += europe[(self.camino[-1], 'Barcelona')]
-        # elif ('Barcelona', self.camino[-1]) in pheromones.keys():
-        #     pheromones[('Barcelona', self.camino[-1])] = (1 - phi) * pheromones[
-        #         ('Barcelona', self.camino[-1])] + phi * tau0
-        #     self.camino_length += europe[('Barcelona', self.camino[-1])]
-        # else:
-        #     raise IndexError('Something went wrong.')
 
-"""Ant Colony System"""
 import copy
 col = Colonia()
 bestSoFar = copy.deepcopy(col.pareto_set)
 iters = 1
-stop = 250
+stop = 50
 bestIter = 0
 
 while iters <= stop:
@@ -288,18 +193,20 @@ while iters <= stop:
     col.nuevos_caminos()
     col.actualizar_frente_pareto()
     col.actualizacion_global_feromonas()
-    bestSoFar = copy.deepcopy(col.pareto_set)
-    bestIter = iters
+    conjunto_pareto = copy.deepcopy(col.pareto_set)
     iters += 1
 
+for hormiga in conjunto_pareto:
+    print("Costos: ", hormiga.costos_camino[0], ", ", hormiga.costos_camino[1])
+    print("Camino: ", hormiga.camino)
 # output result
-print('Best solution found during iteration #' + str(bestIter) + '.')
-print('This clever ant visits all cities in a ' + str(bestSoFar.path_length) +
-      ' km tour.')
-print('Her adventorous journey is:', end = ' ')
-for city in bestSoFar.camino:
-  print(city, end = '-')
-print(bestSoFar.camino[0])
+# print('Best solution found during iteration #' + str(bestIter) + '.')
+# print('This clever ant visits all cities in a ' + str(bestSoFar.path_length) +
+#       ' km tour.')
+# print('Her adventorous journey is:', end = ' ')
+# for city in bestSoFar.camino:
+#   print(city, end = '-')
+# print(bestSoFar.camino[0])
 
 # Inicializar
 # while
