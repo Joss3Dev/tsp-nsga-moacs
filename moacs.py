@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+from nsga import lectura_archivo
 
 
 # Inicializar parametros
@@ -9,27 +10,26 @@ beta = 0.10         # Beta
 m = 10              # Número de Hormigas
 ciudades = []       # Las ciudades
 q0 = 0.6            # Probabilidad de exploracion o explotacion
-tau0 = 0.01         # Tau subcero
+tau0 = 0         # Tau subcero
 rho = 0.02
 
-archivo_ciudades = pd.read_csv("tsp_KROAB100.TSP.txt", sep=' ', index_col = 0)
+file1 = os.path.join(os.getcwd(), "instancias", "tsp_KROAB100.TSP.TXT")
+file2 = os.path.join(os.getcwd(), "instancias", "tsp_kroac100.tsp.txt")
+valores = lectura_archivo(file1)
 
-n = len(ciudades)
-costo1 = [[0 for i in range(n)] for j in range(n)]  # Costo 1 entre las ciudades
-costo2 = [[0 for i in range(n)] for j in range(n)]  # Costo 2 entre las ciudades
+costo1 = [[float(i) for i in j] for j in valores[2][:100]]                                 # Costo 1 entre las ciudades
+costo2 = [[float(i) for i in j] for j in valores[2][100:]]                                 # Costo 2 entre las ciudades
+
+n = len(costo1)
 eta1 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 1
 eta2 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 2
 tau = [[0 for i in range(n)] for j in range(n)]     # Feromonas de los arcos
 
+ciudades = [i for i in range(n)]
 for ciudad in ciudades:
     for vecino in ciudades[ciudad+1:]:
-        costo1[ciudad][vecino] = archivo_ciudades[ciudad][vecino]
-        costo2[ciudad][vecino] = archivo_ciudades[ciudad+100][vecino+100]
-
-for ciudad in ciudades:
-    for vecino in ciudades[ciudad+1:]:
-        eta1[ciudad][vecino] = 1 / costo1[ciudad][vecino]
-        eta2[ciudad][vecino] = 1 / costo2[ciudad][vecino]
+        eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
+        eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
         tau[ciudad][vecino] = 0
 
 
@@ -41,8 +41,10 @@ class Colonia:
         self.miembros = [Hormiga(i+1) for i in range(tam)]
         self.pareto_set = self.miembros
         for miembro in self.miembros:
-            miembro.construir_nuevo_camino()
+            miembro.construir_camino_sin_feromonas()
         self.actualizar_frente_pareto()
+        self.actualizacion_global_feromonas()
+
 
     def encontrar_no_dominados(self, hormigas):
         """Encontrar las hormigas no dominadas en la iteracion actual."""
@@ -60,8 +62,8 @@ class Colonia:
 
     def actualizar_frente_pareto(self):
         no_dominados = self.encontrar_no_dominados(self.miembros)
-        hormigas = no_dominados + self.pareto_set
-        self.pareto_set = copy.deepcopy(self.encontrar_no_dominados(hormigas))
+        hormigas = set(no_dominados).union(set(self.pareto_set))
+        self.pareto_set = copy.deepcopy(self.encontrar_no_dominados(list(hormigas)))
 
     def nuevos_caminos(self):
         """Envia a todas las hormigas de la colonia en busca de un nuevo camino."""
@@ -124,7 +126,50 @@ class Hormiga:
         """Class that represents an ant that follows a path with a certain length."""
         self.num = num
         self.camino = []
-        self.costos_camino = []
+        self.costos_camino = [[], []]
+
+    def construir_camino_sin_feromonas(self):
+        """An ant builds a new path according to pseudorandom proportional rule.
+        Pheromone values are updated locally. The total distance of the path is
+        computed."""
+        self.camino = []  # erase previous path
+        for i in range(len(self.costos_camino)):
+            self.costos_camino[i] = 0
+
+        lambd = self.num / m
+        self.camino.append(0)  # start from BCN
+        for _ in range(1, n):
+            # select possible next stops
+            pos_sig = [i for i in range(n)]
+            # delete already visited cities
+            for visited in self.camino:
+                pos_sig.remove(visited)
+            q = os.urandom(1)[0] / 255
+            i = self.camino[-1]
+            if q <= q0:
+                max_prob = (-1, -1)
+                for j in pos_sig:
+                    prob_actual = (eta1[i][j] ** (lambd * beta)) * (eta2[i][j] ** ((1 - lambd) * beta))
+                    if max_prob[1] < prob_actual:
+                        max_prob = (j, prob_actual)
+                sig_ciudad = max_prob[0]
+            else:
+                suma_vecinos = 0
+                tau_temporal = {}
+                for j in pos_sig:
+                    t = (eta1[i][j] ** (lambd * beta)) * (eta2[i][j] ** ((1 - lambd) * beta))
+                    tau_temporal.update({j: t})
+                    suma_vecinos += t
+                probabilidades = [tau_temporal[camino]/suma_vecinos for camino in tau_temporal]
+                sig_ciudad = np.random.choice(list(tau_temporal.keys()), p=probabilidades)
+
+            self.camino.append(sig_ciudad)
+            self.costos_camino[0] += costo1[i][j]
+            self.costos_camino[1] += costo2[i][j]
+            tau[self.camino[-2]][self.camino[-1]] = tau[self.camino[-1]][self.camino[-2]] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
+
+        tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
+        self.camino.append(0)
 
     def construir_nuevo_camino(self):
         """An ant builds a new path according to pseudorandom proportional rule.
@@ -138,7 +183,7 @@ class Hormiga:
         self.camino.append(0)  # start from BCN
         for _ in range(1, n):
             # select possible next stops
-            pos_sig = range(n)
+            pos_sig = [i for i in range(n)]
             # delete already visited cities
             for visited in self.camino:
                 pos_sig.remove(visited)
@@ -216,6 +261,7 @@ class Hormiga:
 
 
         tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
+        self.camino.append(0)
 
         # after exit the loop: local pheromone and distance update on edge closing the cycle
         # if (self.camino[-1], 'Barcelona') in pheromones.keys():
@@ -234,17 +280,16 @@ import copy
 col = Colonia()
 bestSoFar = copy.deepcopy(col.pareto_set)
 iters = 1
-stop = 50
+stop = 250
 bestIter = 0
 
 while iters <= stop:
+    print(iters)
     col.nuevos_caminos()
-    col.encontrar_frente_pareto()
+    col.actualizar_frente_pareto()
     col.actualizacion_global_feromonas()
-    if col.pareto_set.path_length < bestSoFar.path_length:
-        bestSoFar = copy.deepcopy(col.best)
-        stop += max_iter
-        bestIter = iters
+    bestSoFar = copy.deepcopy(col.pareto_set)
+    bestIter = iters
     iters += 1
 
 # output result
@@ -255,12 +300,6 @@ print('Her adventorous journey is:', end = ' ')
 for city in bestSoFar.camino:
   print(city, end = '-')
 print(bestSoFar.camino[0])
-
-
-class ConjuntoPareto:
-    def __init__(self):
-        self.hormigas = []
-
 
 # Inicializar
 # while
