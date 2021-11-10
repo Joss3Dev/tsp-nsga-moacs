@@ -13,7 +13,7 @@ beta = 0.10         # Beta
 m = 20              # Número de Hormigas
 ciudades = []       # Las ciudades
 q0 = 0.6            # Probabilidad de exploracion o explotacion
-tau0 = 0         # Tau subcero
+tau0 = 0.1*10**-20         # Tau subcero
 rho = 0.02
 n = 0
 
@@ -251,14 +251,14 @@ def test_metricas_moacs(file, y_true_nsga):
     n = len(costo1)
     eta1 = [[0 for i in range(n)] for j in range(n)]  # Visibilidad de los arcos para el objetivo 1
     eta2 = [[0 for i in range(n)] for j in range(n)]  # Visibilidad de los arcos para el objetivo 2
-    tau = [[0 for i in range(n)] for j in range(n)]  # Feromonas de los arcos
+    tau = [[tau0 for i in range(n)] for j in range(n)]  # Feromonas de los arcos
 
     ciudades = [i for i in range(n)]
     for ciudad in ciudades:
         for vecino in ciudades[ciudad + 1:]:
             eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
             eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
-            tau[ciudad][vecino] = 0
+            tau[ciudad][vecino] = tau[vecino][ciudad] = tau0
 
     frentes_pareto = []
     y_true_calculada = y_true_nsga
