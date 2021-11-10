@@ -208,7 +208,7 @@ class Hormiga:
         tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
         self.camino.append(0)
 
-    def     construir_nuevo_camino(self):
+    def construir_nuevo_camino(self):
         self.camino = []
         for i in range(len(self.costos_camino)):
             self.costos_camino[i] = 0
@@ -244,7 +244,7 @@ class Hormiga:
         tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
         self.camino.append(0)
 
-
+print("KROAB100.TSP")
 import copy
 frentes_pareto = []
 y_true_calculada = []
@@ -283,15 +283,76 @@ m2_prom = sum(m2)/len(m2)
 m3_prom = sum(m3)/len(m3)
 error_prom = sum(error)/len(error)
 
-for hormiga in y_true_calculada:
-    print("Costos: ", hormiga.costos_camino[0], ", ", hormiga.costos_camino[1])
-    print("Camino: ", hormiga.camino)
 
 print('M1 promedio: ', m1_prom)
 print('M2 promedio: ', m2_prom)
 print('M3 promedio: ', m3_prom)
 print('Error promedio: ', error_prom)
 
+
+
+print()
+print()
+print()
+print("tsp_kroac100.TSP")
+valores = lectura_archivo(file2)
+
+costo1 = [[float(i) for i in j] for j in valores[2][:100]]                                 # Costo 1 entre las ciudades
+costo2 = [[float(i) for i in j] for j in valores[2][100:]]                                 # Costo 2 entre las ciudades
+
+n = len(costo1)
+eta1 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 1
+eta2 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 2
+tau = [[0 for i in range(n)] for j in range(n)]     # Feromonas de los arcos
+
+ciudades = [i for i in range(n)]
+for ciudad in ciudades:
+    for vecino in ciudades[ciudad+1:]:
+        eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
+        eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
+        tau[ciudad][vecino] = 0
+
+frentes_pareto = []
+y_true_calculada = []
+m1 = []
+m2 = []
+m3 = []
+error = []
+for _ in range(5):
+    col = Colonia()
+    bestSoFar = copy.deepcopy(col.pareto_set)
+    iters = 1
+    stop = 500
+    bestIter = 0
+
+    while iters <= stop:
+        print(iters)
+        col.nuevos_caminos()
+        col.actualizar_frente_pareto()
+        col.actualizacion_global_feromonas()
+        conjunto_pareto = copy.deepcopy(col.pareto_set)
+        iters += 1
+    frentes_pareto.append(copy.deepcopy(conjunto_pareto))
+    y_true_calculada = set(y_true_calculada).union(set(conjunto_pareto))
+    y_true_calculada = col.encontrar_no_dominados(y_true_calculada)
+    col.draw(col.pareto_set)
+col.draw(y_true_calculada)
+
+for frente in frentes_pareto:
+    m1.append(col.m1(y_true_calculada, frente))
+    m2.append(col.m2(5000, frente))
+    m3.append(col.m3(frente))
+    error.append(col.error(frente, y_true_calculada))
+
+m1_prom = sum(m1)/len(m1)
+m2_prom = sum(m2)/len(m2)
+m3_prom = sum(m3)/len(m3)
+error_prom = sum(error)/len(error)
+
+print('M1 promedio: ', m1_prom)
+print('M2 promedio: ', m2_prom)
+print('M3 promedio: ', m3_prom)
+print('Error promedio: ', error_prom)
 
 
 
