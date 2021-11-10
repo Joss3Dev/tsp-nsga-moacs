@@ -37,7 +37,9 @@ class NSGA():
     dummy_fitness = None
     porcentaje_elitismo = None
     porcentaje_mutacion = None 
-    frentes_pareto = []
+    frentes_pareto = [] 
+    m1 = None
+    m2 = None
 
     def __init__(self, size_poblacion=50, max_gen=500, sigma_share=1.7, dummy_fitness=100, porcentaje_elitismo=0.08, porcentaje_mutacion=0.06):
         self.size_poblacion = size_poblacion
@@ -48,9 +50,11 @@ class NSGA():
         self.porcentaje_mutacion = porcentaje_mutacion 
     
     def crear_poblacion_inicial(self, datos):
+        self.m1 = datos[2]
+        self.m2 = datos[3]
         for _ in range(self.size_poblacion):
             c = random.sample(range(int(datos[0])), int(datos[0]))
-            self.poblacion.append(Individuo(c, datos[2], datos[3]))
+            self.poblacion.append(Individuo(c, self.m1, self.m2))
     
     def iniciar_algoritmo(self):
         for _ in range(self.max_gen):
@@ -138,7 +142,7 @@ class NSGA():
                         cro1[i] = cro1[index]
                         cro1[index] = aux 
                         break 
-        new_ind = Individuo(cro1, tupla[2], tupla[3])
+        new_ind = Individuo(cro1, self.m1, self.m2)
         return new_ind
     
     def __mutacion(self,ind):
@@ -150,7 +154,7 @@ class NSGA():
         inversion = cro[r[0]:r[1]]
         inversion.reverse()
         new_cromosoma = ini + inversion + fin 
-        new_ind = Individuo(new_cromosoma, tupla[2], tupla[3])
+        new_ind = Individuo(new_cromosoma, self.m1, self.m2)
         return new_ind
 
 
@@ -219,6 +223,7 @@ def no_dominancia(fronts):
                 dominancia.append(q)
             elif (q.f1 <= p.f1 and q.f2 <= p.f2) and (q.f1 < p.f1 or q.f2 < p.f2):
                 n += 1
+
         if n == 0 and p not in best_front:
             best_front.append(p)
     
@@ -273,6 +278,3 @@ def distancia_euclidiana(p, q):
     s = ((p.f1 - q.f1)**2) + ((p.f2 - q.f2)**2)
     dist = math.sqrt(s)
     return dist 
-
-
-
