@@ -1,13 +1,16 @@
 import os
 import pandas as pd
 import numpy as np
+import math
 from nsga import lectura_archivo
+import matplotlib.pyplot as plt
+
 
 
 # Inicializar parametros
 max_iter = 20
 beta = 0.10         # Beta
-m = 10              # Número de Hormigas
+m = 20              # Número de Hormigas
 ciudades = []       # Las ciudades
 q0 = 0.6            # Probabilidad de exploracion o explotacion
 tau0 = 0         # Tau subcero
@@ -99,6 +102,67 @@ class Colonia:
                     j = hormiga.camino[idx]
                     tau[i][j] = tau[j][i] = (1 - rho) * tau[i][j] + rho / (costo1[i][j] * costo2[i][j])
 
+    def draw(self, pareto_set, subplot=111):
+        """
+        Dibuja el frente pareto.
+
+        @param subplot: posición del gráfico.
+        """
+        fig = plt.figure()
+        pf_ax = fig.add_subplot(subplot)
+        pf_ax.set_title(u"Frente Pareto")
+        for p in pareto_set:
+            pf_ax.scatter(p.costos_camino[0], p.costos_camino[1], marker='o', facecolor='blue')
+        plt.show()
+
+    def distancia(self, a, b):
+        dist = 0
+        for i in range(len(a.costos_camino)):
+            dist += (a.costos_camino[i]-b.costos_camino[i]) ** 2
+        return math.sqrt(dist)
+
+    def m1(self, y_true, frente_patero):
+        suma = 0
+        for p in frente_patero:
+            dist = []
+            for y in y_true:
+                dist.append(col.distancia(p, y))
+            suma = suma + min(dist)
+        return suma / len(frente_patero)
+
+    def m2(self, sigma, frente_pareto):
+        suma = 0
+        for h1 in frente_pareto:
+            for h2 in frente_pareto:
+                if h1 != h2 and self.distancia(h1,h2) > sigma:
+                    suma = suma + 1
+        if len(frente_pareto) - 1 > 0:
+            resultado = suma / (len(frente_pareto) - 1)
+        else:
+            resultado = suma
+        return resultado
+
+    def m3(self, frente_pareto):
+        dist_x = []
+        dist_y = []
+        n = len(frente_pareto)
+        pareto = frente_pareto
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                dist_x.append((pareto[i].costos_camino[0] - pareto[j].costos_camino[0]) ** 2)
+                dist_y.append((pareto[i].costos_camino[1] - pareto[j].costos_camino[1]) ** 2)
+        return math.sqrt(max(dist_x) + max(dist_y))
+
+    def error(self, frente_pareto, y_true):
+        interseccion = []
+        for i in frente_pareto:
+            agregado = False
+            for j in y_true:
+                if i.costos_camino[0] == j.costos_camino[0] and i.costos_camino[1] == j.costos_camino[1] and i.camino == j.camino and not agregado:
+                    interseccion.append(i)
+                    agregado = True
+        return 1 - len(interseccion) / len(frente_pareto)
+
 
 class Hormiga:
     def __init__(self, num):
@@ -144,7 +208,7 @@ class Hormiga:
         tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
         self.camino.append(0)
 
-    def construir_nuevo_camino(self):
+    def     construir_nuevo_camino(self):
         self.camino = []
         for i in range(len(self.costos_camino)):
             self.costos_camino[i] = 0
@@ -182,23 +246,55 @@ class Hormiga:
 
 
 import copy
-col = Colonia()
-bestSoFar = copy.deepcopy(col.pareto_set)
-iters = 1
-stop = 50
-bestIter = 0
+frentes_pareto = []
+y_true_calculada = []
+m1 = []
+m2 = []
+m3 = []
+error = []
+for _ in range(5):
+    col = Colonia()
+    bestSoFar = copy.deepcopy(col.pareto_set)
+    iters = 1
+    stop = 500
+    bestIter = 0
 
-while iters <= stop:
-    print(iters)
-    col.nuevos_caminos()
-    col.actualizar_frente_pareto()
-    col.actualizacion_global_feromonas()
-    conjunto_pareto = copy.deepcopy(col.pareto_set)
-    iters += 1
+    while iters <= stop:
+        print(iters)
+        col.nuevos_caminos()
+        col.actualizar_frente_pareto()
+        col.actualizacion_global_feromonas()
+        conjunto_pareto = copy.deepcopy(col.pareto_set)
+        iters += 1
+    frentes_pareto.append(copy.deepcopy(conjunto_pareto))
+    y_true_calculada = set(y_true_calculada).union(set(conjunto_pareto))
+    y_true_calculada = col.encontrar_no_dominados(y_true_calculada)
+    col.draw(col.pareto_set)
+col.draw(y_true_calculada)
 
-for hormiga in conjunto_pareto:
+for frente in frentes_pareto:
+    m1.append(col.m1(y_true_calculada, frente))
+    m2.append(col.m2(5000, frente))
+    m3.append(col.m3(frente))
+    error.append(col.error(frente, y_true_calculada))
+
+m1_prom = sum(m1)/len(m1)
+m2_prom = sum(m2)/len(m2)
+m3_prom = sum(m3)/len(m3)
+error_prom = sum(error)/len(error)
+
+for hormiga in y_true_calculada:
     print("Costos: ", hormiga.costos_camino[0], ", ", hormiga.costos_camino[1])
     print("Camino: ", hormiga.camino)
+
+print('M1 promedio: ', m1_prom)
+print('M2 promedio: ', m2_prom)
+print('M3 promedio: ', m3_prom)
+print('Error promedio: ', error_prom)
+
+
+
+
 # output result
 # print('Best solution found during iteration #' + str(bestIter) + '.')
 # print('This clever ant visits all cities in a ' + str(bestSoFar.path_length) +
