@@ -1,5 +1,6 @@
 import os, random, math, statistics
 
+
 class Individuo():
     cromosoma = []
     f1 = 0
@@ -49,7 +50,7 @@ class NSGA():
     def crear_poblacion_inicial(self, datos):
         for _ in range(self.size_poblacion):
             c = random.sample(range(int(datos[0])), int(datos[0]))
-            self.poblacion.append(Individuo(c, tupla[2], tupla[3]))
+            self.poblacion.append(Individuo(c, datos[2], datos[3]))
     
     def iniciar_algoritmo(self):
         for _ in range(self.max_gen):
@@ -175,10 +176,6 @@ def lectura_archivo(file):
 
 
 def test_metricas(tupla):
-    m1 = []
-    m2 = []
-    m3 = []
-    error = [] 
     conjunto_frentes = []
 
     for i in range(5):
@@ -187,11 +184,19 @@ def test_metricas(tupla):
         conjunto_frentes.append(ngsa.iniciar_algoritmo()) 
     
     y_true = no_dominancia(conjunto_frentes)
+    return y_true, conjunto_frentes
+
+
+def evaluar(y_true, conjunto_frentes):
+    m1 = []
+    m2 = []
+    m3 = []
+    error = []
     for frente in conjunto_frentes:
-        m1.append(calculo_m1(y_true, frente)))
+        m1.append(calculo_m1(y_true, frente))
         m2.append(calculo_m2(frente))
         m3.append(calculo_m3(frente))
-        error.append(calculo_error(y_true, frente)) 
+        error.append(calculo_error(y_true, frente))
     
     print("Distancia al frente Pareto: ", statistics.mean(m1))
     print("Distribución del frente Pareto: ", statistics.mean(m2))
@@ -213,7 +218,7 @@ def no_dominancia(fronts):
             if (p.f1 <= q.f1 and p.f2 <= q.f2) and (p.f1 < q.f1 or p.f2 < q.f2) and q not in dominancia:
                 dominancia.append(q)
             elif (q.f1 <= p.f1 and q.f2 <= p.f2) and (q.f1 < p.f1 or q.f2 < p.f2):
-                n +=    
+                n += 1
         if n == 0 and p not in best_front:
             best_front.append(p)
     
@@ -248,7 +253,7 @@ def calculo_m2(front):
 def calculo_m3(front):
     suma = 0
     #Dos objetivos
-    for in range(2):
+    for _ in range(2):
         dist = []
         for p in front:
             for q in front:
@@ -271,15 +276,3 @@ def distancia_euclidiana(p, q):
 
 
 
-#Primera instancia 
-file1 = os.path.join(os.getcwd(), "instancias", "tsp_KROAB100.TSP.TXT")
-tupla = lectura_archivo(file1);
-print("\nPrimera Instancia\n")
-test_metricas(tupla)
-
-
-#Segunda instancia 
-file2 = os.path.join(os.getcwd(), "instancias", "tsp_kroac100.tsp.txt") 
-tupla = lectura_archivo(file2);
-print("\nSecunda Instancia\n")
-test_metricas(tupla)

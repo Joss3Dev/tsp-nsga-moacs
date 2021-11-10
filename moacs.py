@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import math
-from nsga import lectura_archivo
+from nsga import lectura_archivo, Individuo
 import matplotlib.pyplot as plt
 
 
@@ -16,24 +16,24 @@ q0 = 0.6            # Probabilidad de exploracion o explotacion
 tau0 = 0         # Tau subcero
 rho = 0.02
 
-file1 = os.path.join(os.getcwd(), "instancias", "tsp_KROAB100.TSP.TXT")
-file2 = os.path.join(os.getcwd(), "instancias", "tsp_kroac100.tsp.txt")
-valores = lectura_archivo(file1)
-
-costo1 = [[float(i) for i in j] for j in valores[2][:100]]                                 # Costo 1 entre las ciudades
-costo2 = [[float(i) for i in j] for j in valores[2][100:]]                                 # Costo 2 entre las ciudades
-
-n = len(costo1)
-eta1 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 1
-eta2 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 2
-tau = [[0 for i in range(n)] for j in range(n)]     # Feromonas de los arcos
-
-ciudades = [i for i in range(n)]
-for ciudad in ciudades:
-    for vecino in ciudades[ciudad+1:]:
-        eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
-        eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
-        tau[ciudad][vecino] = 0
+# file1 = os.path.join(os.getcwd(), "instancias", "tsp_KROAB100.TSP.TXT")
+# file2 = os.path.join(os.getcwd(), "instancias", "tsp_kroac100.tsp.txt")
+# valores = lectura_archivo(file1)
+#
+# costo1 = [[float(i) for i in j] for j in valores[2][:100]]                                 # Costo 1 entre las ciudades
+# costo2 = [[float(i) for i in j] for j in valores[2][100:]]                                 # Costo 2 entre las ciudades
+#
+# n = len(costo1)
+# eta1 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 1
+# eta2 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 2
+# tau = [[0 for i in range(n)] for j in range(n)]     # Feromonas de los arcos
+#
+# ciudades = [i for i in range(n)]
+# for ciudad in ciudades:
+#     for vecino in ciudades[ciudad+1:]:
+#         eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
+#         eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
+#         tau[ciudad][vecino] = 0
 
 
 class Colonia:
@@ -74,17 +74,6 @@ class Colonia:
 
     def actualizacion_global_feromonas(self):
         """Actualizacion global de feromonas. Debe ser llamado despues de que se haya encontrado a la mejor hormiga."""
-
-
-        """ AL TERMINAR LA ITERACION SE ACTUALIZA LOS TAU CON LA ECUACION GENERICA"""
-        #  usar pareto set y encontrar el frente pareto
-        #  if tau_0 < tau_0':
-        #   reiniciar tau, osea la tabla de feromonas
-        #  else:
-        #   for elem in elementos en el conjunto pareto:
-        #       i = elem.i
-        #       j = elem.j
-        #       tau(i, j) = (1 - ro)*tau(i, j) + ro / (evaluan_funcion_1(elemento_pareto) * evaluan_funcion_2(elemento_pareto))
 
         hormigas_optimas = len(self.pareto_set)
         promedio_costo_1 = sum([hormiga.costos_camino[0] for hormiga in self.pareto_set]) / hormigas_optimas
@@ -176,7 +165,8 @@ class Hormiga:
             self.costos_camino[i] = 0
 
         lambd = self.num / m
-        self.camino.append(0)
+        ini = int(os.urandom(1)[0] / 255 * 100)
+        self.camino.append(ini)
         for _ in range(1, n):
             pos_sig = [i for i in range(n)]
             for visited in self.camino:
@@ -205,15 +195,16 @@ class Hormiga:
             self.costos_camino[1] += costo2[i][j]
             tau[self.camino[-2]][self.camino[-1]] = tau[self.camino[-1]][self.camino[-2]] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
 
-        tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
-        self.camino.append(0)
+        tau[ini][self.camino[-1]] = tau[self.camino[-1]][ini] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
+        self.camino.append(ini)
 
     def construir_nuevo_camino(self):
         self.camino = []
         for i in range(len(self.costos_camino)):
             self.costos_camino[i] = 0
         lambd = self.num / m
-        self.camino.append(0)
+        ini = int(os.urandom(1)[0] / 255 * 100)
+        self.camino.append(ini)
         for _ in range(1, n):
             pos_sig = [i for i in range(n)]
             for visited in self.camino:
@@ -241,143 +232,170 @@ class Hormiga:
             self.costos_camino[1] += costo2[i][j]
             tau[self.camino[-2]][self.camino[-1]] = tau[self.camino[-1]][self.camino[-2]] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
 
-        tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
-        self.camino.append(0)
+        tau[ini][self.camino[-1]] = tau[self.camino[-1]][ini] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
+        self.camino.append(ini)
 
 print("KROAB100.TSP")
 import copy
-frentes_pareto = []
-y_true_calculada = []
-m1 = []
-m2 = []
-m3 = []
-error = []
-for _ in range(5):
-    col = Colonia()
-    bestSoFar = copy.deepcopy(col.pareto_set)
-    iters = 1
-    stop = 500
-    bestIter = 0
-
-    while iters <= stop:
-        print(iters)
-        col.nuevos_caminos()
-        col.actualizar_frente_pareto()
-        col.actualizacion_global_feromonas()
-        conjunto_pareto = copy.deepcopy(col.pareto_set)
-        iters += 1
-    frentes_pareto.append(copy.deepcopy(conjunto_pareto))
-    y_true_calculada = set(y_true_calculada).union(set(conjunto_pareto))
-    y_true_calculada = col.encontrar_no_dominados(y_true_calculada)
-    col.draw(col.pareto_set)
-col.draw(y_true_calculada)
-
-for frente in frentes_pareto:
-    m1.append(col.m1(y_true_calculada, frente))
-    m2.append(col.m2(5000, frente))
-    m3.append(col.m3(frente))
-    error.append(col.error(frente, y_true_calculada))
-
-m1_prom = sum(m1)/len(m1)
-m2_prom = sum(m2)/len(m2)
-m3_prom = sum(m3)/len(m3)
-error_prom = sum(error)/len(error)
 
 
-print('M1 promedio: ', m1_prom)
-print('M2 promedio: ', m2_prom)
-print('M3 promedio: ', m3_prom)
-print('Error promedio: ', error_prom)
+def test_metricas_moacs(file, y_true_nsga):
+    valores = lectura_archivo(file)
+
+    costo1 = [[float(i) for i in j] for j in valores[2][:100]]  # Costo 1 entre las ciudades
+    costo2 = [[float(i) for i in j] for j in valores[2][100:]]  # Costo 2 entre las ciudades
+
+    n = len(costo1)
+    eta1 = [[0 for i in range(n)] for j in range(n)]  # Visibilidad de los arcos para el objetivo 1
+    eta2 = [[0 for i in range(n)] for j in range(n)]  # Visibilidad de los arcos para el objetivo 2
+    tau = [[0 for i in range(n)] for j in range(n)]  # Feromonas de los arcos
+
+    ciudades = [i for i in range(n)]
+    for ciudad in ciudades:
+        for vecino in ciudades[ciudad + 1:]:
+            eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
+            eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
+            tau[ciudad][vecino] = 0
+
+    frentes_pareto = []
+    y_true_calculada = y_true_nsga
+    for _ in range(5):
+        col = Colonia()
+        bestSoFar = copy.deepcopy(col.pareto_set)
+        iters = 1
+        stop = 500
+        bestIter = 0
+
+        while iters <= stop:
+            print(iters)
+            col.nuevos_caminos()
+            col.actualizar_frente_pareto()
+            col.actualizacion_global_feromonas()
+            conjunto_pareto = copy.deepcopy(col.pareto_set)
+            iters += 1
+        frentes_pareto.append(copy.deepcopy(conjunto_pareto))
+        y_true_calculada = set(y_true_calculada).union(set(conjunto_pareto))
+        y_true_calculada = col.encontrar_no_dominados(y_true_calculada)
+        col.draw(col.pareto_set)
+    col.draw(y_true_calculada)
+
+    return y_true_calculada, frentes_pareto, col
 
 
+def evaluar_moacs(y_true_calculada, frentes_pareto, col):
+    m1 = []
+    m2 = []
+    m3 = []
+    error = []
+    for frente in frentes_pareto:
+        m1.append(col.m1(y_true_calculada, frente))
+        m2.append(col.m2(5000, frente))
+        m3.append(col.m3(frente))
+        error.append(col.error(frente, y_true_calculada))
 
-print()
-print()
-print()
-print("tsp_kroac100.TSP")
-valores = lectura_archivo(file2)
+    m1_prom = sum(m1)/len(m1)
+    m2_prom = sum(m2)/len(m2)
+    m3_prom = sum(m3)/len(m3)
+    error_prom = sum(error)/len(error)
 
-costo1 = [[float(i) for i in j] for j in valores[2][:100]]                                 # Costo 1 entre las ciudades
-costo2 = [[float(i) for i in j] for j in valores[2][100:]]                                 # Costo 2 entre las ciudades
+    print('M1 promedio: ', m1_prom)
+    print('M2 promedio: ', m2_prom)
+    print('M3 promedio: ', m3_prom)
+    print('Error promedio: ', error_prom)
 
-n = len(costo1)
-eta1 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 1
-eta2 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 2
-tau = [[0 for i in range(n)] for j in range(n)]     # Feromonas de los arcos
+# test_metricas_moacs(file2)
 
-ciudades = [i for i in range(n)]
-for ciudad in ciudades:
-    for vecino in ciudades[ciudad+1:]:
-        eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
-        eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
-        tau[ciudad][vecino] = 0
+# print()
+# print()
+# print()
+# print("tsp_kroac100.TSP")
+# valores = lectura_archivo(file2)
+#
+# costo1 = [[float(i) for i in j] for j in valores[2][:100]]                                 # Costo 1 entre las ciudades
+# costo2 = [[float(i) for i in j] for j in valores[2][100:]]                                 # Costo 2 entre las ciudades
+#
+# n = len(costo1)
+# eta1 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 1
+# eta2 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 2
+# tau = [[0 for i in range(n)] for j in range(n)]     # Feromonas de los arcos
+#
+# ciudades = [i for i in range(n)]
+# for ciudad in ciudades:
+#     for vecino in ciudades[ciudad+1:]:
+#         eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
+#         eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
+#         tau[ciudad][vecino] = 0
+#
+# frentes_pareto = []
+# y_true_calculada = []
+# m1 = []
+# m2 = []
+# m3 = []
+# error = []
+# for _ in range(5):
+#     col = Colonia()
+#     bestSoFar = copy.deepcopy(col.pareto_set)
+#     iters = 1
+#     stop = 500
+#     bestIter = 0
+#
+#     while iters <= stop:
+#         # print(iters)
+#         col.nuevos_caminos()
+#         col.actualizar_frente_pareto()
+#         col.actualizacion_global_feromonas()
+#         conjunto_pareto = copy.deepcopy(col.pareto_set)
+#         iters += 1
+#     frentes_pareto.append(copy.deepcopy(conjunto_pareto))
+#     y_true_calculada = set(y_true_calculada).union(set(conjunto_pareto))
+#     y_true_calculada = col.encontrar_no_dominados(y_true_calculada)
+#     col.draw(col.pareto_set)
+# col.draw(y_true_calculada)
+#
+# for frente in frentes_pareto:
+#     m1.append(col.m1(y_true_calculada, frente))
+#     m2.append(col.m2(5000, frente))
+#     m3.append(col.m3(frente))
+#     error.append(col.error(frente, y_true_calculada))
+#
+# m1_prom = sum(m1)/len(m1)
+# m2_prom = sum(m2)/len(m2)
+# m3_prom = sum(m3)/len(m3)
+# error_prom = sum(error)/len(error)
+#
+# print('M1 promedio: ', m1_prom)
+# print('M2 promedio: ', m2_prom)
+# print('M3 promedio: ', m3_prom)
+# print('Error promedio: ', error_prom)
 
-frentes_pareto = []
-y_true_calculada = []
-m1 = []
-m2 = []
-m3 = []
-error = []
-for _ in range(5):
-    col = Colonia()
-    bestSoFar = copy.deepcopy(col.pareto_set)
-    iters = 1
-    stop = 500
-    bestIter = 0
 
-    while iters <= stop:
-        print(iters)
-        col.nuevos_caminos()
-        col.actualizar_frente_pareto()
-        col.actualizacion_global_feromonas()
-        conjunto_pareto = copy.deepcopy(col.pareto_set)
-        iters += 1
-    frentes_pareto.append(copy.deepcopy(conjunto_pareto))
-    y_true_calculada = set(y_true_calculada).union(set(conjunto_pareto))
-    y_true_calculada = col.encontrar_no_dominados(y_true_calculada)
-    col.draw(col.pareto_set)
-col.draw(y_true_calculada)
-
-for frente in frentes_pareto:
-    m1.append(col.m1(y_true_calculada, frente))
-    m2.append(col.m2(5000, frente))
-    m3.append(col.m3(frente))
-    error.append(col.error(frente, y_true_calculada))
-
-m1_prom = sum(m1)/len(m1)
-m2_prom = sum(m2)/len(m2)
-m3_prom = sum(m3)/len(m3)
-error_prom = sum(error)/len(error)
-
-print('M1 promedio: ', m1_prom)
-print('M2 promedio: ', m2_prom)
-print('M3 promedio: ', m3_prom)
-print('Error promedio: ', error_prom)
+def y_true_nsga_a_moacs(y_true):
+    y_true_moacs = []
+    i = 1
+    for ind in y_true:
+        y_true_moacs.append(individuo_a_hormiga(ind, i))
+        i += 1
+    return y_true_moacs
 
 
+def individuo_a_hormiga(individuo, i):
+    h = Hormiga(i)
+    h.camino = individuo.cromosoma
+    h.costos_camino[0] = individuo.f1
+    h.costos_camino[1] = individuo.f2
+    return h
 
-# output result
-# print('Best solution found during iteration #' + str(bestIter) + '.')
-# print('This clever ant visits all cities in a ' + str(bestSoFar.path_length) +
-#       ' km tour.')
-# print('Her adventorous journey is:', end = ' ')
-# for city in bestSoFar.camino:
-#   print(city, end = '-')
-# print(bestSoFar.camino[0])
 
-# Inicializar
-# while
-#     for cada hormiga
-#         contruir una solucion
-#         algo = contruir_tour()
-#         if x esta en conjunto pareto
-#             guardar x y borrar las soluciones dominadas del conjunto pareto
-#     calcular theta sub-cero prima con la formula
-#     if theta sub-cero prima es mejor a theta sub-cero
-#         significa que un mejor conjuto pareto se encontro
-#         asignar theta sub-cero prima a theta sub-cero
-#         se reinicializa theta con theta sub-cero
-#     else
-#         for x in conjunto pareto
-#             se hace una actualizacion global
-#             theta(i,j) = (1 - p) * theta(i,j) + p / algunas weas
+def y_true_moacs_a_nsga(y_true):
+    y_true_nsga = []
+    for h in y_true:
+        y_true_nsga.append(hormiga_a_individuo(h))
+    return y_true_nsga
+
+
+def hormiga_a_individuo(h):
+    i = Individuo()
+    i.cromosoma = h.camino
+    i.f1 = h.costos_camino[0]
+    i.f2 = h.costos_camino[1]
+    return i
