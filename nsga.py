@@ -264,7 +264,10 @@ def calculo_m3(front):
             for q in front:
                 if p != q:
                     dist.append(distancia_euclidiana(p,q))
-        suma += max(dist)
+        if len(dist) != 0:
+            suma += max(dist)
+        else:
+            suma = 0
     return math.sqrt(suma) 
 
 

@@ -15,6 +15,7 @@ ciudades = []       # Las ciudades
 q0 = 0.6            # Probabilidad de exploracion o explotacion
 tau0 = 0         # Tau subcero
 rho = 0.02
+n = 0
 
 # file1 = os.path.join(os.getcwd(), "instancias", "tsp_KROAB100.TSP.TXT")
 # file2 = os.path.join(os.getcwd(), "instancias", "tsp_kroac100.tsp.txt")
@@ -115,7 +116,7 @@ class Colonia:
         for p in frente_patero:
             dist = []
             for y in y_true:
-                dist.append(col.distancia(p, y))
+                dist.append(self.distancia(p, y))
             suma = suma + min(dist)
         return suma / len(frente_patero)
 
@@ -166,7 +167,7 @@ class Hormiga:
 
         lambd = self.num / m
         ini = int(os.urandom(1)[0] / 255 * 100)
-        self.camino.append(ini)
+        self.camino.append(0)
         for _ in range(1, n):
             pos_sig = [i for i in range(n)]
             for visited in self.camino:
@@ -195,8 +196,8 @@ class Hormiga:
             self.costos_camino[1] += costo2[i][j]
             tau[self.camino[-2]][self.camino[-1]] = tau[self.camino[-1]][self.camino[-2]] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
 
-        tau[ini][self.camino[-1]] = tau[self.camino[-1]][ini] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
-        self.camino.append(ini)
+        tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
+        self.camino.append(0)
 
     def construir_nuevo_camino(self):
         self.camino = []
@@ -204,7 +205,7 @@ class Hormiga:
             self.costos_camino[i] = 0
         lambd = self.num / m
         ini = int(os.urandom(1)[0] / 255 * 100)
-        self.camino.append(ini)
+        self.camino.append(0)
         for _ in range(1, n):
             pos_sig = [i for i in range(n)]
             for visited in self.camino:
@@ -232,18 +233,20 @@ class Hormiga:
             self.costos_camino[1] += costo2[i][j]
             tau[self.camino[-2]][self.camino[-1]] = tau[self.camino[-1]][self.camino[-2]] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
 
-        tau[ini][self.camino[-1]] = tau[self.camino[-1]][ini] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
-        self.camino.append(ini)
+        tau[0][self.camino[-1]] = tau[self.camino[-1]][0] = (1 - rho) * tau[self.camino[-2]][self.camino[-1]] + rho * tau0
+        self.camino.append(0)
 
 print("KROAB100.TSP")
 import copy
 
 
 def test_metricas_moacs(file, y_true_nsga):
-    valores = lectura_archivo(file)
+    valores = file
+
+    global costo1, costo2, n, eta1, eta2, tau, ciudades
 
     costo1 = [[float(i) for i in j] for j in valores[2][:100]]  # Costo 1 entre las ciudades
-    costo2 = [[float(i) for i in j] for j in valores[2][100:]]  # Costo 2 entre las ciudades
+    costo2 = [[float(i) for i in j] for j in valores[3][:100]]  # Costo 2 entre las ciudades
 
     n = len(costo1)
     eta1 = [[0 for i in range(n)] for j in range(n)]  # Visibilidad de los arcos para el objetivo 1
@@ -267,7 +270,7 @@ def test_metricas_moacs(file, y_true_nsga):
         bestIter = 0
 
         while iters <= stop:
-            print(iters)
+            # print(iters)
             col.nuevos_caminos()
             col.actualizar_frente_pareto()
             col.actualizacion_global_feromonas()
@@ -394,7 +397,7 @@ def y_true_moacs_a_nsga(y_true):
 
 
 def hormiga_a_individuo(h):
-    i = Individuo()
+    i = Individuo(h.camino, costo1, costo2)
     i.cromosoma = h.camino
     i.f1 = h.costos_camino[0]
     i.f2 = h.costos_camino[1]
