@@ -41,7 +41,7 @@ class NSGA():
     m1 = None
     m2 = None
 
-    def __init__(self, size_poblacion=50, max_gen=500, sigma_share=1.7, dummy_fitness=100, porcentaje_elitismo=0.08, porcentaje_mutacion=0.06):
+    def __init__(self, size_poblacion=50, max_gen=250, sigma_share=1.7, dummy_fitness=100, porcentaje_elitismo=0.08, porcentaje_mutacion=0.06):
         self.size_poblacion = size_poblacion
         self.max_gen = max_gen
         self.sigma_share = sigma_share

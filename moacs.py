@@ -17,24 +17,6 @@ tau0 = 0.1*10**-20         # Tau subcero
 rho = 0.02
 n = 0
 
-# file1 = os.path.join(os.getcwd(), "instancias", "tsp_KROAB100.TSP.TXT")
-# file2 = os.path.join(os.getcwd(), "instancias", "tsp_kroac100.tsp.txt")
-# valores = lectura_archivo(file1)
-#
-# costo1 = [[float(i) for i in j] for j in valores[2][:100]]                                 # Costo 1 entre las ciudades
-# costo2 = [[float(i) for i in j] for j in valores[2][100:]]                                 # Costo 2 entre las ciudades
-#
-# n = len(costo1)
-# eta1 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 1
-# eta2 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 2
-# tau = [[0 for i in range(n)] for j in range(n)]     # Feromonas de los arcos
-#
-# ciudades = [i for i in range(n)]
-# for ciudad in ciudades:
-#     for vecino in ciudades[ciudad+1:]:
-#         eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
-#         eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
-#         tau[ciudad][vecino] = 0
 
 
 class Colonia:
@@ -266,7 +248,7 @@ def test_metricas_moacs(file, y_true_nsga):
         col = Colonia()
         bestSoFar = copy.deepcopy(col.pareto_set)
         iters = 1
-        stop = 500
+        stop = 250
         bestIter = 0
 
         while iters <= stop:
@@ -305,72 +287,6 @@ def evaluar_moacs(y_true_calculada, frentes_pareto, col):
     print('M2 promedio: ', m2_prom)
     print('M3 promedio: ', m3_prom)
     print('Error promedio: ', error_prom)
-
-# test_metricas_moacs(file2)
-
-# print()
-# print()
-# print()
-# print("tsp_kroac100.TSP")
-# valores = lectura_archivo(file2)
-#
-# costo1 = [[float(i) for i in j] for j in valores[2][:100]]                                 # Costo 1 entre las ciudades
-# costo2 = [[float(i) for i in j] for j in valores[2][100:]]                                 # Costo 2 entre las ciudades
-#
-# n = len(costo1)
-# eta1 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 1
-# eta2 = [[0 for i in range(n)] for j in range(n)]    # Visibilidad de los arcos para el objetivo 2
-# tau = [[0 for i in range(n)] for j in range(n)]     # Feromonas de los arcos
-#
-# ciudades = [i for i in range(n)]
-# for ciudad in ciudades:
-#     for vecino in ciudades[ciudad+1:]:
-#         eta1[ciudad][vecino] = eta1[vecino][ciudad] = 1 / costo1[ciudad][vecino]
-#         eta2[ciudad][vecino] = eta2[vecino][ciudad] = 1 / costo2[ciudad][vecino]
-#         tau[ciudad][vecino] = 0
-#
-# frentes_pareto = []
-# y_true_calculada = []
-# m1 = []
-# m2 = []
-# m3 = []
-# error = []
-# for _ in range(5):
-#     col = Colonia()
-#     bestSoFar = copy.deepcopy(col.pareto_set)
-#     iters = 1
-#     stop = 500
-#     bestIter = 0
-#
-#     while iters <= stop:
-#         # print(iters)
-#         col.nuevos_caminos()
-#         col.actualizar_frente_pareto()
-#         col.actualizacion_global_feromonas()
-#         conjunto_pareto = copy.deepcopy(col.pareto_set)
-#         iters += 1
-#     frentes_pareto.append(copy.deepcopy(conjunto_pareto))
-#     y_true_calculada = set(y_true_calculada).union(set(conjunto_pareto))
-#     y_true_calculada = col.encontrar_no_dominados(y_true_calculada)
-#     col.draw(col.pareto_set)
-# col.draw(y_true_calculada)
-#
-# for frente in frentes_pareto:
-#     m1.append(col.m1(y_true_calculada, frente))
-#     m2.append(col.m2(5000, frente))
-#     m3.append(col.m3(frente))
-#     error.append(col.error(frente, y_true_calculada))
-#
-# m1_prom = sum(m1)/len(m1)
-# m2_prom = sum(m2)/len(m2)
-# m3_prom = sum(m3)/len(m3)
-# error_prom = sum(error)/len(error)
-#
-# print('M1 promedio: ', m1_prom)
-# print('M2 promedio: ', m2_prom)
-# print('M3 promedio: ', m3_prom)
-# print('Error promedio: ', error_prom)
-
 
 def y_true_nsga_a_moacs(y_true):
     y_true_moacs = []
